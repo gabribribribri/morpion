@@ -1,17 +1,16 @@
 
 pub struct Morpion {
-    grid: [Team; 9],
-    turn: Team,
+    pub grid: [Team; 9],
 }
 
 #[derive(Debug)]
-enum PlacementError {
+pub enum PlacementError {
     OutOfRange,
     CellAlreadyOccupied,
 }
 
 #[derive(Copy, Clone, PartialEq)]
-enum Team {
+pub enum Team {
     Circle,
     Cross,
     Blank
@@ -46,17 +45,16 @@ impl Morpion {
     pub fn new() -> Self {
         Morpion {
             grid: [Blank; 9],
-            turn: Circle,
         }
     }
 
-    fn play_at(&mut self, idx: usize) -> Result<(), PlacementError> {
+    pub fn play_at(&mut self, idx: usize, turn: Team) -> Result<(), PlacementError> {
         match self.grid.get(idx) {
             None => Err(PlacementError::OutOfRange),
             Some(cell) => match cell {
                 Circle | Cross => Err(PlacementError::CellAlreadyOccupied),
                 Blank => {
-                    self.grid[idx] = self.turn;
+                    self.grid[idx] = turn;
                     Ok(())
                 }
             },
@@ -64,8 +62,9 @@ impl Morpion {
     }
 
     pub fn gameloop(&mut self) {
+        let mut turn = Circle;
         loop {
-            if self.turn == Circle {
+            if turn == Circle {
                 println!("{}", self);
             }
 
@@ -77,19 +76,19 @@ impl Morpion {
                 return;
             }
 
-            match self.turn {
+            match turn {
                 Circle => self.human_plays(),
                 Cross => self.bot_plays(),
                 Blank => panic!("Blank is not supposed to play")
             }
 
-            self.turn = !self.turn;
+            turn = !turn;
         }
     }
 
     fn human_plays(&mut self) {
         loop {
-            match self.play_at(get_user_input()) {
+            match self.play_at(get_user_input(), Circle) {
                 Ok(()) => (),
                 Err(_) => continue,
             }
@@ -97,7 +96,7 @@ impl Morpion {
         }
     }
 
-    fn bot_plays(&mut self) {
+    pub fn bot_plays(&mut self) {
         let idx_to_play = indexes_empty_cell(self.grid)
             .map(|i| {
                 let mut next_grid = self.grid;
@@ -110,7 +109,11 @@ impl Morpion {
             .unwrap()
             .0;
         println!(">>> will play at {}", idx_to_play);
-        self.play_at(idx_to_play).unwrap()
+        self.play_at(idx_to_play, Cross).unwrap()
+    }
+
+    pub fn check_win(&self) -> Option<Team> {
+        check_win(self.grid)
     }
 }
 fn get_user_input() -> usize {
@@ -190,7 +193,7 @@ impl std::fmt::Display for Morpion {
                 in_pion(w[2])
             )?;
         }
-        write!(f, "{} >>", in_pion(self.turn))?;
+        write!(f, "O >>")?;
         Ok(())
     }
 }

@@ -1,5 +1,3 @@
-use std::io::Write;
-
 struct Morpion {
     grid: [Option<bool>; 9],
     turn: bool,
@@ -19,31 +17,12 @@ const WIN_PATTERN: [[usize; 3]; 8] = [
     [1, 4, 7],
     [2, 5, 8],
     [0, 4, 8],
-    [2, 5, 8],
+    [2, 4, 6],
 ];
 
-impl std::fmt::Display for Morpion {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for w in self.grid.chunks(3) {
-            writeln!(
-                f,
-                "{} | {} | {}",
-                in_pion(w[0]),
-                in_pion(w[1]),
-                in_pion(w[2])
-            )?;
-        }
-        write!(f, "{} >>", in_pion(Some(self.turn)))?;
-        Ok(())
-    }
-}
-
-fn in_pion(c: Option<bool>) -> char {
-    match c {
-        None => ' ',
-        Some(true) => 'O',
-        Some(false) => 'X',
-    }
+fn main() {
+    let mut mpn = Morpion::new();
+    mpn.gameloop();
 }
 
 fn get_user_input() -> usize {
@@ -65,6 +44,7 @@ fn get_user_input() -> usize {
         }
     }
 }
+
 fn check_win(grid: [Option<bool>; 9]) -> Option<Option<bool>> {
     for pattern in WIN_PATTERN {
         if grid[pattern[0]] == grid[pattern[1]]
@@ -88,6 +68,27 @@ fn indexes_empty_cell(grid: [Option<bool>; 9]) -> impl std::iter::Iterator<Item 
         .filter(|(_, c)| c.is_none())
         .map(|(i, _)| i)
 }
+
+fn win_proba(grid: [Option<bool>; 9], turn: bool) -> f32 {
+    match check_win(grid) {
+        Some(Some(true)) => return 0.0,
+        Some(Some(false)) => return 1.0,
+        Some(None) => return 0.5,
+        None => (),
+    }
+
+    let mut number_of_possible_move = 0.0;
+    let mut win_probability = 0.0;
+    for i in indexes_empty_cell(grid) {
+        let mut next_grid = grid;
+        next_grid[i] = Some(turn);
+        win_probability += win_proba(next_grid, !turn);
+        number_of_possible_move += 1.0
+    }
+
+    return win_probability / number_of_possible_move;
+}
+
 impl Morpion {
     fn new() -> Self {
         Morpion {
@@ -159,26 +160,26 @@ impl Morpion {
     }
 }
 
-fn main() {
-    let mut mpn = Morpion::new();
-    mpn.gameloop();
+impl std::fmt::Display for Morpion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for w in self.grid.chunks(3) {
+            writeln!(
+                f,
+                "{} | {} | {}",
+                in_pion(w[0]),
+                in_pion(w[1]),
+                in_pion(w[2])
+            )?;
+        }
+        write!(f, "{} >>", in_pion(Some(self.turn)))?;
+        Ok(())
+    }
 }
 
-fn win_proba(grid: [Option<bool>; 9], turn: bool) -> f32 {
-    match check_win(grid) {
-        Some(Some(true)) | Some(None) => return 0.0,
-        Some(Some(false)) => return 1.0,
-        None => (),
+fn in_pion(c: Option<bool>) -> char {
+    match c {
+        None => ' ',
+        Some(true) => 'O',
+        Some(false) => 'X',
     }
-
-    let mut number_of_possible_move = 0.0;
-    let mut win_probability = 0.0;
-    for i in indexes_empty_cell(grid) {
-        let mut next_grid = grid;
-        next_grid[i] = Some(turn);
-        win_probability += win_proba(next_grid, !turn);
-        number_of_possible_move += 1.0
-    }
-
-    return win_probability / number_of_possible_move;
 }

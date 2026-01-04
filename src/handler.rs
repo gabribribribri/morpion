@@ -29,16 +29,9 @@ impl<'a> Handler<'a> {
 
         win.set_framerate_limit(240);
 
-        let grid: [RectangleShape<'a>; 9] = core::array::from_fn(|i| {
-            let mut cell = RectangleShape::with_size(Vector2f::new(200.0, 200.0));
-            cell.set_position((50.0 + 250.0 * (i % 3) as f32, 50.0 + 250.0 * (i / 3) as f32));
-            cell.set_fill_color(Color::BLACK);
-            cell
-        });
-
         Handler {
             win,
-            grid,
+            grid: create_grid(),
             mpn: Morpion::new(),
             ended: false,
             background: Color::WHITE,
@@ -73,6 +66,17 @@ impl<'a> Handler<'a> {
                     x,
                     y,
                 } => self.play_at(Vector2f::new(x as f32, y as f32)),
+                Event::MouseButtonPressed {
+                    button: Button::Right,
+                    x,
+                    y,
+                } => {
+                    self.mpn = Morpion::new();
+                    self.grid = create_grid();
+                    self.ended = false;
+                    self.background = Color::WHITE;
+                }
+
                 _ => (),
             }
         }
@@ -131,4 +135,13 @@ impl<'a> Handler<'a> {
         self.win
             .set_view(&*View::from_rect(Rect::new(0., 0., width as f32, height as f32)).unwrap());
     }
+}
+
+fn create_grid<'a>() -> [RectangleShape<'a>; 9] {
+    core::array::from_fn(|i| {
+        let mut cell = RectangleShape::with_size(Vector2f::new(200.0, 200.0));
+        cell.set_position((50.0 + 250.0 * (i % 3) as f32, 50.0 + 250.0 * (i / 3) as f32));
+        cell.set_fill_color(Color::BLACK);
+        cell
+    })
 }
